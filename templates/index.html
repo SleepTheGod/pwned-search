@@ -1,0 +1,1174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pwned Search - Breach Database Scanner</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+    <style>
+        /* Reset & Base */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a6a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6a6a8a;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid #1a1a2e;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            font-size: 32px;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7b2ffc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo span {
+            font-size: 14px;
+            color: #888;
+            -webkit-text-fill-color: #888;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .status-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-dot.online {
+            background: #00ff88;
+            box-shadow: 0 0 10px #00ff8844;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.offline {
+            background: #ff4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Search Section */
+        .search-section {
+            background: linear-gradient(145deg, #111128, #0a0a1a);
+            border: 1px solid #1a1a3e;
+            border-radius: 16px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .search-input-wrapper {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 12px;
+            border: 1px solid #2a2a4e;
+            background: #0f0f20;
+            color: #e0e0e0;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #7b2ffc;
+            box-shadow: 0 0 20px #7b2ffc22;
+        }
+
+        .search-input::placeholder {
+            color: #555;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #7b2ffc, #00d4ff);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px #7b2ffc44;
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #1a1a3e;
+            color: #aaa;
+            border: 1px solid #2a2a5e;
+        }
+
+        .btn-secondary:hover {
+            background: #2a2a5e;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ff4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff6666;
+        }
+
+        .btn-success {
+            background: #00cc88;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #00ee99;
+        }
+
+        .search-options {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding-top: 10px;
+            border-top: 1px solid #1a1a2e;
+        }
+
+        .option-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #888;
+        }
+
+        .option-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #7b2ffc;
+            cursor: pointer;
+        }
+
+        .option-group select {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid #2a2a4e;
+            background: #0f0f20;
+            color: #e0e0e0;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #111128;
+            border: 1px solid #1a1a3e;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card .value {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #7b2ffc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card .label {
+            font-size: 13px;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        /* Results */
+        .results-section {
+            margin-top: 20px;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #1a1a2e;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .results-count {
+            font-size: 14px;
+            color: #888;
+        }
+
+        .results-count strong {
+            color: #e0e0e0;
+        }
+
+        .result-card {
+            background: #111128;
+            border: 1px solid #1a1a3e;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            border-color: #3a3a6e;
+            box-shadow: 0 4px 20px #00000044;
+        }
+
+        .result-card .db-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #00d4ff;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .result-card .db-name .badge {
+            font-size: 12px;
+            padding: 2px 12px;
+            border-radius: 12px;
+            background: #1a1a3e;
+            color: #888;
+            font-weight: 400;
+        }
+
+        .result-card .match {
+            padding: 8px 12px;
+            background: #0a0a1a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-family: 'Courier New', monospace;
+            color: #ccc;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .result-card .match .line-num {
+            color: #555;
+            margin-right: 12px;
+            font-weight: 600;
+        }
+
+        .result-card .match .highlight {
+            background: #7b2ffc44;
+            padding: 2px 4px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .result-card .match-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #1a1a3e;
+            border-top-color: #7b2ffc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+
+        .empty-state .icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+        }
+
+        .empty-state h3 {
+            color: #aaa;
+            margin-bottom: 8px;
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .toast {
+            padding: 16px 20px;
+            border-radius: 12px;
+            background: #1a1a2e;
+            border: 1px solid #2a2a4e;
+            color: #e0e0e0;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 8px 30px #00000066;
+        }
+
+        .toast.error {
+            border-color: #ff4444;
+        }
+
+        .toast.success {
+            border-color: #00cc88;
+        }
+
+        .toast.warning {
+            border-color: #ffaa00;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .search-row {
+                flex-direction: column;
+            }
+
+            .search-options {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .results-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+
+            .search-section {
+                padding: 20px;
+            }
+
+            .stat-card .value {
+                font-size: 22px;
+            }
+        }
+
+        /* Database List Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: #00000088;
+            backdrop-filter: blur(8px);
+            z-index: 9998;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: #111128;
+            border: 1px solid #2a2a4e;
+            border-radius: 16px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid #1a1a2e;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .modal-close:hover {
+            color: white;
+        }
+
+        .modal-body {
+            padding: 20px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-body table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .modal-body th {
+            text-align: left;
+            padding: 12px 8px;
+            color: #666;
+            border-bottom: 1px solid #1a1a2e;
+            font-weight: 600;
+        }
+
+        .modal-body td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #0a0a1a;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .modal-body tr:hover td {
+            background: #0f0f20;
+        }
+
+        .modal-body .index-col {
+            color: #555;
+            width: 50px;
+        }
+
+        .modal-body .size-col {
+            color: #666;
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🔍</span>
+                <div>
+                    <h1>Pwned Search</h1>
+                    <span>Breach Database Scanner</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="status-badge">
+                    <span class="status-dot online" id="statusDot"></span>
+                    <span id="statusText">Online</span>
+                </div>
+                <button class="btn btn-secondary" onclick="listDatabases()">
+                    📚 List DBs
+                </button>
+                <button class="btn btn-secondary" onclick="fetchStats()">
+                    📊 Stats
+                </button>
+                <button class="btn btn-secondary" onclick="clearResults()">
+                    🗑️ Clear
+                </button>
+            </div>
+        </header>
+
+        <!-- Stats -->
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="value" id="statDatabases">-</div>
+                <div class="label">Total Databases</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="statMatches">-</div>
+                <div class="label">Total Matches</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="statSearched">-</div>
+                <div class="label">Databases Searched</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" id="statTime">-</div>
+                <div class="label">Search Time (s)</div>
+            </div>
+        </div>
+
+        <!-- Search -->
+        <section class="search-section">
+            <form class="search-form" id="searchForm" onsubmit="performSearch(event)">
+                <div class="search-row">
+                    <div class="search-input-wrapper">
+                        <input
+                            type="text"
+                            class="search-input"
+                            id="searchInput"
+                            placeholder="Search for email, username, domain, or password..."
+                            required
+                            minlength="2"
+                        >
+                    </div>
+                    <button type="submit" class="btn btn-primary" id="searchBtn">
+                        🔍 Search
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="performAsyncSearch()">
+                        ⏳ Async
+                    </button>
+                </div>
+                <div class="search-options">
+                    <div class="option-group">
+                        <input type="checkbox" id="caseSensitive">
+                        <label for="caseSensitive">Case Sensitive</label>
+                    </div>
+                    <div class="option-group">
+                        <label for="maxResults">Max per DB</label>
+                        <select id="maxResults">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="250">250</option>
+                            <option value="500">500</option>
+                        </select>
+                    </div>
+                    <div class="option-group">
+                        <label for="dbIndices">DB Indices</label>
+                        <input
+                            type="text"
+                            id="dbIndices"
+                            placeholder="e.g. 0,1,2 or leave empty for all"
+                            style="padding:6px 12px;border-radius:8px;border:1px solid #2a2a4e;background:#0f0f20;color:#e0e0e0;width:180px;font-size:14px;"
+                        >
+                    </div>
+                    <div class="option-group" style="margin-left:auto;">
+                        <button type="button" class="btn btn-success" onclick="exportResults()" style="padding:8px 16px;font-size:13px;">
+                            📥 Export
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        <!-- Results -->
+        <section class="results-section" id="resultsSection">
+            <div class="results-header">
+                <div class="results-count" id="resultsCount">Ready to search</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="copyResults()" style="padding:8px 16px;font-size:13px;">
+                        📋 Copy
+                    </button>
+                </div>
+            </div>
+            <div id="resultsContainer">
+                <div class="empty-state">
+                    <div class="icon">🔎</div>
+                    <h3>Search for breaches</h3>
+                    <p>Enter an email, username, or other credential to search</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Database List Modal -->
+    <div class="modal-overlay" id="dbModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📚 Available Databases</h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="dbModalBody">
+                <div class="loading"><div class="spinner"></div><p>Loading...</p></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // Configuration
+        const API_BASE = 'http://localhost:5000/api';
+        let searchResults = [];
+        let taskPollInterval = null;
+
+        // ============ Utility Functions ============
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        function formatNumber(n) {
+            return new Intl.NumberFormat().format(n);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function highlightText(text, term) {
+            if (!term || !text) return escapeHtml(text);
+            const escaped = escapeHtml(text);
+            const escapedTerm = escapeHtml(term);
+            const regex = new RegExp(`(${escapedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+            return escaped.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // ============ API Calls ============
+
+        async function fetchAPI(endpoint, options = {}) {
+            const url = `${API_BASE}${endpoint}`;
+            const config = {
+                headers: { 'Content-Type': 'application/json' },
+                ...options
+            };
+            try {
+                const response = await fetch(url, config);
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.message || `HTTP ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                showToast(`API Error: ${error.message}`, 'error');
+                throw error;
+            }
+        }
+
+        // ============ Core Functions ============
+
+        async function performSearch(event) {
+            if (event) event.preventDefault();
+            
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm || searchTerm.length < 2) {
+                showToast('Search term must be at least 2 characters', 'warning');
+                return;
+            }
+
+            const maxResults = document.getElementById('maxResults').value;
+            const caseSensitive = document.getElementById('caseSensitive').checked;
+            const dbIndices = document.getElementById('dbIndices').value.trim();
+
+            const params = new URLSearchParams({
+                q: searchTerm,
+                max_results: maxResults,
+                case_sensitive: caseSensitive
+            });
+
+            if (dbIndices) {
+                params.append('indices', dbIndices);
+            }
+
+            const btn = document.getElementById('searchBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Searching...';
+            showToast(`Searching for "${searchTerm}"...`, 'info');
+
+            try {
+                const data = await fetchAPI(`/search?${params}`);
+                displayResults(data);
+                updateStats(data);
+                showToast(`Found matches in ${data.databases_with_matches} databases`, 'success');
+            } catch (error) {
+                showToast(`Search failed: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Search';
+            }
+        }
+
+        async function performAsyncSearch() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm || searchTerm.length < 2) {
+                showToast('Search term must be at least 2 characters', 'warning');
+                return;
+            }
+
+            const maxResults = document.getElementById('maxResults').value;
+            const caseSensitive = document.getElementById('caseSensitive').checked;
+            const dbIndices = document.getElementById('dbIndices').value.trim();
+
+            const payload = {
+                q: searchTerm,
+                max_results: parseInt(maxResults),
+                case_sensitive: caseSensitive,
+                async: true
+            };
+
+            if (dbIndices) {
+                payload.indices = dbIndices.split(',').map(i => parseInt(i.trim()));
+            }
+
+            const btn = document.getElementById('searchBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Starting...';
+            showToast('Starting async search...', 'info');
+
+            try {
+                const data = await fetchAPI('/search', {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                if (data.status === 'accepted') {
+                    showToast(`Async search started. Task ID: ${data.task_id}`, 'success');
+                    pollTask(data.task_id);
+                } else {
+                    showToast('Unexpected response', 'error');
+                }
+            } catch (error) {
+                showToast(`Failed to start async search: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '🔍 Search';
+            }
+        }
+
+        function pollTask(taskId) {
+            if (taskPollInterval) clearInterval(taskPollInterval);
+            
+            showToast(`Polling task ${taskId}...`, 'info');
+            const container = document.getElementById('resultsContainer');
+            container.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Processing async task...</p>
+                    <p style="font-size:12px;color:#666;" id="taskProgress">Initializing...</p>
+                </div>
+            `;
+
+            taskPollInterval = setInterval(async () => {
+                try {
+                    const data = await fetchAPI(`/task/${taskId}`);
+                    
+                    if (data.status === 'pending') {
+                        document.getElementById('taskProgress').textContent = 'Waiting in queue...';
+                    } else if (data.status === 'progress') {
+                        const p = data.progress;
+                        document.getElementById('taskProgress').textContent = 
+                            `Searching ${p.database} (${p.current}/${p.total})`;
+                    } else if (data.status === 'success') {
+                        clearInterval(taskPollInterval);
+                        displayResults(data.result);
+                        updateStats(data.result);
+                        showToast('Async search completed!', 'success');
+                    } else if (data.status === 'error') {
+                        clearInterval(taskPollInterval);
+                        showToast(`Task failed: ${data.message}`, 'error');
+                        document.getElementById('resultsContainer').innerHTML = `
+                            <div class="empty-state">
+                                <div class="icon">❌</div>
+                                <h3>Task Failed</h3>
+                                <p>${escapeHtml(data.message)}</p>
+                            </div>
+                        `;
+                    }
+                } catch (error) {
+                    clearInterval(taskPollInterval);
+                    showToast(`Error polling task: ${error.message}`, 'error');
+                }
+            }, 2000);
+        }
+
+        async function listDatabases() {
+            const modal = document.getElementById('dbModal');
+            const body = document.getElementById('dbModalBody');
+            modal.classList.add('active');
+            body.innerHTML = '<div class="loading"><div class="spinner"></div><p>Loading databases...</p></div>';
+
+            try {
+                const data = await fetchAPI('/databases?per_page=200');
+                if (data.status === 'success' && data.databases) {
+                    let html = `<table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Size</th>
+                                <th>Hash</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
+                    data.databases.forEach(db => {
+                        html += `<tr>
+                            <td class="index-col">${db.index}</td>
+                            <td>${escapeHtml(db.name)}</td>
+                            <td class="size-col">${db.size || 'Unknown'}</td>
+                            <td style="font-size:11px;color:#555;">${db.hash || '-'}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody></table>';
+                    body.innerHTML = html;
+                } else {
+                    body.innerHTML = `<div class="empty-state"><div class="icon">📭</div><h3>No databases found</h3></div>`;
+                }
+            } catch (error) {
+                body.innerHTML = `<div class="empty-state"><div class="icon">❌</div><h3>Error loading databases</h3><p>${escapeHtml(error.message)}</p></div>`;
+            }
+        }
+
+        async function fetchStats() {
+            try {
+                const data = await fetchAPI('/stats');
+                if (data.status === 'success') {
+                    showToast(`Total: ${data.total_databases} databases, ~${data.estimated_total_size_gb}GB`, 'success');
+                }
+            } catch (error) {
+                showToast(`Failed to fetch stats: ${error.message}`, 'error');
+            }
+        }
+
+        async function exportResults() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            if (!searchTerm) {
+                showToast('Please perform a search first', 'warning');
+                return;
+            }
+            
+            const format = confirm('Export as CSV? Click OK for CSV, Cancel for JSON') ? 'csv' : 'json';
+            try {
+                const url = `${API_BASE}/export/${encodeURIComponent(searchTerm)}?format=${format}&max_results=500`;
+                window.open(url, '_blank');
+                showToast(`Exporting as ${format.toUpperCase()}...`, 'success');
+            } catch (error) {
+                showToast(`Export failed: ${error.message}`, 'error');
+            }
+        }
+
+        function clearResults() {
+            searchResults = [];
+            document.getElementById('resultsContainer').innerHTML = `
+                <div class="empty-state">
+                    <div class="icon">🔎</div>
+                    <h3>Search for breaches</h3>
+                    <p>Enter an email, username, or other credential to search</p>
+                </div>
+            `;
+            document.getElementById('resultsCount').textContent = 'Ready to search';
+            document.getElementById('statMatches').textContent = '-';
+            document.getElementById('statSearched').textContent = '-';
+            document.getElementById('statTime').textContent = '-';
+        }
+
+        function copyResults() {
+            if (!searchResults || searchResults.length === 0) {
+                showToast('No results to copy', 'warning');
+                return;
+            }
+            
+            let text = '=== Pwned Search Results ===\n\n';
+            let total = 0;
+            searchResults.forEach(db => {
+                if (db.match_count > 0) {
+                    text += `\n📁 ${db.database} (${db.match_count} matches)\n`;
+                    db.matches.forEach(m => {
+                        text += `  Line ${m.line}: ${m.content}\n`;
+                    });
+                    total += db.match_count;
+                }
+            });
+            text += `\nTotal: ${total} matches`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showToast(`Copied ${total} matches to clipboard`, 'success');
+            }).catch(() => {
+                showToast('Failed to copy', 'error');
+            });
+        }
+
+        // ============ Display Functions ============
+
+        function displayResults(data) {
+            const container = document.getElementById('resultsContainer');
+            const results = data.results || [];
+            searchResults = results;
+
+            if (!results.length || results.every(r => r.match_count === 0)) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">✅</div>
+                        <h3>No matches found</h3>
+                        <p>Search term "${escapeHtml(data.search_term)}" not found in any database</p>
+                    </div>
+                `;
+                document.getElementById('resultsCount').textContent = `No matches found for "${data.search_term}"`;
+                return;
+            }
+
+            let html = '';
+            let totalMatches = 0;
+            let dbsWithMatches = 0;
+
+            results.forEach(db => {
+                if (db.match_count === 0) return;
+                dbsWithMatches++;
+                totalMatches += db.match_count;
+
+                html += `
+                    <div class="result-card">
+                        <div class="db-name">
+                            ${escapeHtml(db.database)}
+                            <span class="badge">${db.match_count} matches</span>
+                            ${db.search_time ? `<span class="badge">${db.search_time}s</span>` : ''}
+                        </div>
+                `;
+
+                db.matches.forEach(m => {
+                    const highlighted = highlightText(m.content, data.search_term);
+                    html += `
+                        <div class="match">
+                            <span class="line-num">#${m.line}</span>
+                            ${highlighted}
+                        </div>
+                    `;
+                });
+
+                if (db.error) {
+                    html += `<div style="color:#ff4444;font-size:13px;margin-top:8px;">⚠️ ${escapeHtml(db.error)}</div>`;
+                }
+
+                html += '</div>';
+            });
+
+            container.innerHTML = html;
+            document.getElementById('resultsCount').innerHTML = 
+                `Found <strong>${formatNumber(totalMatches)}</strong> matches in <strong>${dbsWithMatches}</strong> databases for "<strong>${escapeHtml(data.search_term)}</strong>"`;
+        }
+
+        function updateStats(data) {
+            const results = data.results || [];
+            let totalMatches = 0;
+            results.forEach(db => totalMatches += db.match_count || 0);
+            
+            document.getElementById('statMatches').textContent = formatNumber(totalMatches);
+            document.getElementById('statSearched').textContent = data.total_databases_searched || '-';
+            document.getElementById('statTime').textContent = data.search_time || '-';
+        }
+
+        function closeModal() {
+            document.getElementById('dbModal').classList.remove('active');
+        }
+
+        // Close modal on backdrop click
+        document.getElementById('dbModal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        // ============ Health Check ============
+
+        async function checkHealth() {
+            try {
+                const data = await fetchAPI('/health');
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                if (data.status === 'healthy') {
+                    dot.className = 'status-dot online';
+                    text.textContent = 'Online';
+                    
+                    // Update database count
+                    if (data.databases_cached) {
+                        document.getElementById('statDatabases').textContent = data.databases_cached;
+                    }
+                } else {
+                    throw new Error('Unhealthy');
+                }
+            } catch (error) {
+                const dot = document.getElementById('statusDot');
+                const text = document.getElementById('statusText');
+                dot.className = 'status-dot offline';
+                text.textContent = 'Offline';
+                showToast('API is offline. Make sure the server is running.', 'error');
+            }
+        }
+
+        // ============ Init ============
+
+        // Check health every 30 seconds
+        checkHealth();
+        setInterval(checkHealth, 30000);
+
+        // Allow Enter key to trigger search in the indices input
+        document.getElementById('dbIndices').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('searchForm').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        console.log('🔍 Pwned Search Frontend loaded');
+        console.log(`📡 API endpoint: ${API_BASE}`);
+    </script>
+</body>
+</html>
